@@ -321,13 +321,13 @@ class IO_MIDI :
     }
 
     def dump(self, fp = sys.stdout, opts = {}):
-        if opts.has_key('hexdump') and opts['hexdump']:
+        if ('hexdump' in opts) and opts['hexdump']:
             bitio = IO_Bit()
             bitio.input(self._mididata)
         fp.write("HEADER:\n")
         for key, value in self.header['header'].items(): 
             fp.write("  {0}: {1}\n".format(key, value))
-        if opts.has_key('hexdump') and opts['hexdump']:
+        if ('hexdump' in opts) and opts['hexdump']:
             bitio.hexdump(0, self.header['length'] + 8)
         xfkaraoke_with_track = {}
         for idx, value in enumerate(self.tracks):
@@ -338,7 +338,7 @@ class IO_MIDI :
         for idx, track in xfkaraoke_with_track.items():
             scaleCharactors = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
             fp.write("TRACK[{0}]:\n".format(idx))
-            if opts.has_key('hexdump') and opts['hexdump']:
+            if ('hexdump' in opts) and opts['hexdump']:
                 bitio.hexdump(track['_offset'], 8)
             for idx2, chunk in enumerate(track['track']):
                 fp.write("  [{0}:".format(idx2))
@@ -352,7 +352,7 @@ class IO_MIDI :
                         fp.write(" {0}:{1}({2}),".format(key, value, eventname))
                     elif key == 'MetaEventType':
                         meta_event_type = value
-                        if self.meta_event_name.has_key(value):
+                        if value in self.meta_event_name:
                             eventname = self.meta_event_name[value]
                             fp.write(" {0}:{1}({2}),".format(key, value, eventname))
                         else:
@@ -377,10 +377,10 @@ class IO_MIDI :
 		            notekey = scaleCharactors[value % 12]
                             fp.write(" {:s}:{:d}({:s}{:.0f}),".format(key, value, notekey, noteoct))
                     else:
-		        if (key[0:1] != '_') or (opts.has_key('verbose') and opts['verbose']): 
+		        if (key[0:1] != '_') or (('verbose' in opts) and opts['verbose']): 
                             fp.write(" {0}:{1},".format(key, value))
                 fp.write("\n")
-                if opts.has_key('hexdump') and opts['hexdump']:
+                if ('hexdump' in opts) and opts['hexdump']:
                     bitio.hexdump(chunk['_offset'], chunk['_length'])
 
     def build(self, opts = {}):
@@ -425,14 +425,14 @@ class IO_MIDI :
         for chunk in track: 
            self.putVaribleLengthValue(writer, chunk['DeltaTime'])
            eventType = chunk['EventType']
-           if chunk.has_key('MIDIChannel'):
+           if 'MIDIChannel' in chunk:
                midiChannel = chunk['MIDIChannel']
            else:
-               if chunk.has_key('MetaEventType'):
+               if 'MetaEventType' in chunk:
                    midiChannel = 0xF
-               elif chunk.has_key('SystemEx'):
+               elif 'SystemEx' in chunk:
                    midiChannel = 0
-               elif chunk.has_key('SystemExCont'):
+               elif 'SystemExCont'in chunk:
                    midiChannel = 0x7
                else:
                    raise Exception("unknown MetaEventType")

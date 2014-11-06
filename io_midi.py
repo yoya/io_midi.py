@@ -6,6 +6,7 @@ import sys
 import math
 from collections import OrderedDict
 from io_bit import IO_Bit
+# from pprint import pprint
 
 class IO_MIDI :
     def __init__(self):
@@ -18,13 +19,13 @@ class IO_MIDI :
         reader.input(mididata)
         while reader.hasNextData(4):
             chunk = self._parseChunk(reader)
-            if chunk['type'] == 'MThd':
+            if chunk['type'] == b'MThd':
                 self.header = chunk
-            elif chunk['type'] == 'MTrk':
+            elif chunk['type'] == b'MTrk':
                 self.tracks.append(chunk)
-            elif chunk['type'] == 'XFIH':
+            elif chunk['type'] == b'XFIH':
                 self.xfinfo = chunk
-            elif chunk['type'] == 'XFKM':
+            elif chunk['type'] == b'XFKM':
                 self.xfkaraoke = chunk
             else:
                 sys.stderr.write("Can't parse chunk.")
@@ -36,16 +37,16 @@ class IO_MIDI :
         length = reader.getUI32BE()
         nextOffset = offset + 8 + length
         chunk = {'type':type, 'length':length, '_offset':offset}
-        if type == 'MThd':
+        if type == b'MThd':
             chunk['header'] = self._parseChunkHeader(reader)
-        elif type == 'MTrk':
+        elif type == b'MTrk':
             chunk['track'] = self._parseChunkTrack(reader, nextOffset)
-        elif type == 'XFIH':
+        elif type == b'XFIH':
             chunk['xfinfo'] = self._parseChunkXFInfo(reader, nextOffset)
-        elif type == 'XFKM':
+        elif type == b'XFKM':
             chunk['xfkaraoke'] = self._parseChunkXFKaraoke(reader, nextOffset)
         else:
-            sys.stderr.write("warning: Unknown chunk (type=type)\n")
+            sys.stderr.write("warning: Unknown chunk (type={})\n".format(type))
             return {}
         doneOffset, dummy = reader.getOffset()
         if doneOffset != nextOffset: 
@@ -65,16 +66,16 @@ class IO_MIDI :
     def _parseChunkTrack(self, reader, nextOffset):
         track = []
         prev_status = None
-	time = 0
+        time = 0
         while True:
             offset, dummy = reader.getOffset()
             if offset >= nextOffset: 
                 break # done
             chunk = OrderedDict(_offset=offset)
             # delta time
-	    deltaTime = self.getVaribleLengthValue(reader)
+            deltaTime = self.getVaribleLengthValue(reader)
             chunk['DeltaTime'] = deltaTime
-	    time += deltaTime
+            time += deltaTime
             # event
             status = reader.getUI8() # status byte
             while status < 0x80:  # running status
@@ -134,7 +135,7 @@ class IO_MIDI :
                 exit (0)
             offset2, dummy = reader.getOffset()
             chunk['_length'] = offset2 - offset
-	    chunk['_time'] = time
+            chunk['_time'] = time
             track.append(chunk)
             prev_status = status
         return track
@@ -163,17 +164,17 @@ class IO_MIDI :
     
     def _parseChunkXFKaraoke(self, reader, nextOffset):
         xfkaraoke = []
-	time = 0
+        time = 0
         while True:
             offset, dummy = reader.getOffset()
             if offset >= nextOffset: 
                 break # done
             chunk = OrderedDict(_offset=offset)
             # delta time
-	    deltaTime = self.getVaribleLengthValue(reader)
+            deltaTime = self.getVaribleLengthValue(reader)
             chunk['DeltaTime'] = deltaTime
-	    time += deltaTime
-	    # event
+            time += deltaTime
+            # event
             status = reader.getUI8() # status byte
             if status != 0xFF: 
                 o, dummy = reader.getOffset()
@@ -194,7 +195,7 @@ class IO_MIDI :
                 sys.stderr.write("Unknown type(0x{:02X}) offset(0x{:x}) in xfkaraokeHeader\n".format(type, o - 1))
             offset2, dummy = reader.getOffset()
             chunk['_length'] = offset2 - offset
-	    chunk['_time'] = time
+            chunk['_time'] = time
             xfkaraoke.append(chunk)
         return xfkaraoke
     
@@ -332,8 +333,8 @@ class IO_MIDI :
         xfkaraoke_with_track = {}
         for idx, value in enumerate(self.tracks):
             xfkaraoke_with_track["{0}".format(idx)] = value;
-	if not self.xfkaraoke is None:
-	    xfkaraoke_with_track["karaoke"] = self.xfkaraoke
+        if not self.xfkaraoke is None:
+            xfkaraoke_with_track["karaoke"] = self.xfkaraoke
             xfkaraoke_with_track["karaoke"]["track"] = self.xfkaraoke["xfkaraoke"]
         for idx, track in xfkaraoke_with_track.items():
             scaleCharactors = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
@@ -373,11 +374,11 @@ class IO_MIDI :
                            i += 1
                         fp.write(")")
                     elif key ==  'NoteNumber':
-		            noteoct = math.floor(value / 12)
-		            notekey = scaleCharactors[value % 12]
+                            noteoct = math.floor(value / 12)
+                            notekey = scaleCharactors[value % 12]
                             fp.write(" {:s}:{:d}({:s}{:.0f}),".format(key, value, notekey, noteoct))
                     else:
-		        if (key[0:1] != '_') or (('verbose' in opts) and opts['verbose']): 
+                        if (key[0:1] != '_') or (('verbose' in opts) and opts['verbose']): 
                             fp.write(" {0}:{1},".format(key, value))
                 fp.write("\n")
                 if ('hexdump' in opts) and opts['hexdump']:
@@ -388,9 +389,9 @@ class IO_MIDI :
         self._buildChunk(writer, self.header, opts)
         for track in self.tracks: 
             self._buildChunk(writer, track, opts)
-	if self.xfinfo: 
+        if self.xfinfo:
             self._buildChunk(writer, self.xfinfo, opts)
-	if self.xfkaraoke: 
+        if self.xfkaraoke:
             self._buildChunk(writer, self.xfkaraoke, opts)
         
         return writer.output()
@@ -499,7 +500,7 @@ class IO_MIDI :
         prev_status = None
         for chunk in xfinfo: 
             self.putVaribleLengthValue(writer, chunk['DeltaTime'])
-     	    status = 0xFF # MetaEvent
+            status = 0xFF # MetaEvent
             if empty(opts['runningstatus'] == True):
                writer.putUI8(status)
             else:
@@ -507,25 +508,25 @@ class IO_MIDI :
                    writer.putUI8(status)
                    prev_status = status
             writer.putUI8(chunk['MetaEventType'])
-	    length = len(chunk['MetaEventData'])
+            length = len(chunk['MetaEventData'])
             self.putVaribleLengthValue(writer, length)
             writer.putData(chunk['MetaEventData'], length)
 
     def _buildChunkXFKaraoke(self, writer, xfkaraoke, opts):
         prev_status = None
-	for chunk in xfkaraoke: 
-	    self.putVaribleLengthValue(writer, chunk['DeltaTime'])
-     	    status = 0xFF # MetaEvent
+        for chunk in xfkaraoke:
+            self.putVaribleLengthValue(writer, chunk['DeltaTime'])
+            status = 0xFF # MetaEvent
             if empty(opts['runningstatus'] == True):
                writer.putUI8(status)
             else:
                if prev_status != status: 
                    writer.putUI8(status)
                    prev_status = status
-	    type = chunk['MetaEventType']
+            type = chunk['MetaEventType']
             writer.putUI8(type)
-	    if type == 0x2F:  # End of Track
-	        self.putVaribleLengthValue(writer, 0)
+            if type == 0x2F:  # End of Track
+                self.putVaribleLengthValue(writer, 0)
             else:
                 length = len(chunk['MetaEventData'])
                 self.putVaribleLengthValue(writer, length)

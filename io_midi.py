@@ -332,7 +332,7 @@ class IO_MIDI :
         xfkaraoke_with_track = {}
         for idx, value in enumerate(self.tracks):
             xfkaraoke_with_track["{0}".format(idx)] = value;
-	if self.xfkaraoke != None:
+	if not self.xfkaraoke is None:
 	    xfkaraoke_with_track["karaoke"] = self.xfkaraoke
             xfkaraoke_with_track["karaoke"]["track"] = self.xfkaraoke["xfkaraoke"]
         for idx, track in xfkaraoke_with_track.items():

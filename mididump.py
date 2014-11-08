@@ -13,8 +13,6 @@ parser.add_argument('-v', action='store_true', default=False,
                     help='switch to verbose mode')
 args = parser.parse_args()
 
-print(args)
-
 mididata = open(args.midifile, "rb").read()
 opts = { 'hexdump':args.hexdump, 'verbose':args.verbose }
 

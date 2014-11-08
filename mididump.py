@@ -20,7 +20,7 @@ print(args)
 opts = { 'hexdump':args.hexdump, 'verbose':args.verbose }
 
 
-mididata = open(args.midifile).read()
+mididata = open(args.midifile, "rb").read()
 
 midi = IO_MIDI()
 midi.parse(mididata)

@@ -365,8 +365,11 @@ class IO_MIDI :
                     elif key ==  'SystemEx' or key ==  'SystemExCont' or key ==  'MetaEventData':
                         fp.write(" {0}:".format(key))
                         dataLen = len(value)
-                        if (key == 'MetaEventData') and (meta_event_type == 0x05):
-                            fp.write(value.decode('SJIS'))
+                        if key == 'MetaEventData':
+                            if meta_event_type == 0x05:
+                                fp.write(value.decode('SJIS'))
+                            elif meta_event_type == 0x07:
+                                fp.write(value)
                         fp.write("(")
                         i = 0
                         while i < dataLen:
